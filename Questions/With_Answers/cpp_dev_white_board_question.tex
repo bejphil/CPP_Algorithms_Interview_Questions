@@ -1,0 +1,269 @@
+\documentclass[letterpaper,11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, setspace, esint}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+
+\usepackage{fontspec}
+\usepackage{minted}
+
+\allowdisplaybreaks[1]
+
+\makeatletter
+\newcommand\blx@unitmark{23sp}
+\makeatother
+
+\newcommand{\LOne}[1]{ \lvert \lvert #1 \rvert \rvert_1 }
+\newcommand{\LTwoSqr}[1]{ \lvert \lvert #1 \rvert \rvert_2^2 }
+\newcommand{\LInf}[1]{ \lvert \lvert #1 \rvert \rvert_{\infty} }
+
+\newcommand\tikzmark[1]{%
+  \tikz[remember picture,overlay]\node[inner sep=2pt] (#1) {};}
+\newcommand\DrawBox[3][]{%
+  \tikz[remember picture,overlay]\draw[#1] ([xshift=-3.5em,yshift=7pt]#2.north west) rectangle (#3.south east);}
+
+\algnewcommand\algorithmicinput{\textbf{Input:}}
+\algnewcommand\Input{\item[\algorithmicinput]}
+
+\algnewcommand\algorithmicoutput{\textbf{Output:}}
+\algnewcommand\Output{\item[\algorithmicoutput]}
+
+\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
+
+\begin{document}
+
+\section*{Algorithm to compute  $\pi$}
+
+\subsection*{Question 1:}
+
+Construct an algorithm in C++ to approximate $\pi$. Assume that you are working on a project
+ with a small development team and your algorithm will be used
+ as a part of a larger code base.
+
+\begin{itemize}
+  \item Assume that the required precision of the calculation is not known until run-time.
+  \item You do not need to determine the error $\lvert x - \pi \rvert$ associated with
+   your calculation.
+  \item Your algorithm should be able to work with single or double-precision floating point numbers
+  \item Assume you have access to a compiler that supports any version of C and/or C++ that you would like
+  numbers.
+\end{itemize}
+
+You can use any method, libraries etc. that you would
+like with the exception of functions that approximate transcendental numbers ( e.g.
+ std::asin, M\_PI or similar ).
+
+It might be useful to know that $\pi = 4 \sum_{k=1}^{\infty} \frac{ (-1)^{k+1} }{ 2k - 1 }$
+( known as the Gregory Series ). The first few terms in the series are $
+4( 1 - \frac{1}{3} + \frac{1}{5} - \frac{1}{7} + \dots )$.
+
+This is not the only way to compute $\pi$ and there is no special reason why this
+ method should be preferred over any other method.
+
+You do need to write a Make file, compiler/linker commands or
+explicitly write out \#include statements, but you are responsible for appropriately
+  using namespaces.
+
+\subsection*{Possible Answer 1:}
+
+\subsubsection*{Solution using Gregory Series:}
+Start with the identity $\pi \approx 4 \sum_{k=0}^{N} \frac{ (-1)^{k+1} }{ 2k - 1 }$
+
+\begin{minted}[mathescape,
+               linenos,
+               numbersep=5pt,
+               gobble=2,
+               frame=lines,
+               framesep=2mm]{cpp}
+
+    \* run_time_pi.h *\
+
+    namespace wbp {
+
+    template< typename T >
+    T partial_sum( T (*f)(uint index), uint sum_start, uint sum_end ) {
+
+       T sum_total = static_cast<T>( 0 );
+
+       for( uint i = sum_start; i <= sum_end ; i++ ) {
+           sum_total += f(i);
+       }
+
+       return sum_total;
+
+    }
+
+    template < typename T >
+    T alt_sign( uint k ) {
+       return ( ( k + 1 )%2 == 0 )?( static_cast<T>( 1 ) ):( static_cast<T>( -1 ) );
+    }
+
+    template < typename T >
+    T gregory_term( uint k ) {
+
+       return alt_sign<T>( k )*static_cast<T>(1) / static_cast<T>( 2*k - 1 );
+    }
+
+    template< typename T >
+    T gregory_pi( uint num_iter ) {
+
+      static_assert( std::is_floating_point<T>::value,
+       "Template parameter must be a floating-point value.");
+      return static_cast<T>( 4 )*partial_sum( &gregory_term<T>, 1, num_iter );
+
+    }
+
+    }
+\end{minted}
+
+\subsubsection*{Solution using Power Series:}
+Start with the identity $\pi \approx \sqrt{ 6 \sum_{k=1}^{N} \frac{1}{k^2} }$
+
+\begin{minted}[mathescape,
+               linenos,
+               numbersep=5pt,
+               gobble=2,
+               frame=lines,
+               framesep=2mm]{cpp}
+
+    \* run_time_pi.h *\
+
+    namespace wbp {
+
+    template< typename T >
+    T partial_sum( T (*f)(uint index), uint sum_start, uint sum_end ) {
+
+       T sum_total = static_cast<T>( 0 );
+
+       for( uint i = sum_start; i <= sum_end ; i++ ) {
+           sum_total += f(i);
+       }
+
+       return sum_total;
+
+    }
+
+    template < typename T >
+    T pow_term( uint k ) {
+
+        return static_cast<T>( 1 )/static_cast<T>( k * k );
+
+    }
+
+    template< typename T >
+    T power_pi( uint num_iter ) {
+
+        static_assert( std::is_floating_point<T>::value,
+        "Template parameter must be a floating-point value.");
+        return std::sqrt( static_cast<T>( 6 )*partial_sum( &pow_term<T>, 1, num_iter ) );
+
+    }
+
+    }
+\end{minted}
+
+\subsection*{Question 2:}
+
+Suppose your team notices that your algorithm is a performance bottle-neck,
+how would you speed it up?
+
+\subsection*{Possible Answer 2:}
+
+For any of these series methods the terms in the series are independent, as
+ they only depend on index. The series terms can be computed in a canonical ``for''
+  loop and easily parallelized using OpenMP for similar.
+
+For a method like the Monte Carlo method each point can be assigned a position
+independently of one another.
+
+\subsection*{Question 3:}
+
+Suppose someone else in your team has written an algorithm to compute $\pi$
+ using the Gregory Series $ \left( \pi = 4 \sum_{k=0}^{\infty} \frac{ (-1)^{k+1} }{ 2k - 1 } \right)$.
+
+Their algorithm, in pseudo-code, takes the following form:
+
+ \FloatBarrier
+ \begin{algorithm}[!htbp]
+   \caption{ Estimate $\pi$ using Gregory Sum formula, using pairs of terms.}
+   \begin{algorithmic}[1]
+    \Input{$n \in \mathbb{N} $}\Comment{Specify the number of terms in the series -- must be an even number}
+    \State $x \gets 0$\Comment{ Initialize the total sum to zero. }
+     \For{ $k \in [ 1, 3, 5, \dots, n/2 - 1 ]$ }
+      \State $x \gets x + \left( \frac{1}{2k-1} - \frac{1}{2( k + 1 ) -1} \right)$
+     \EndFor
+   \end{algorithmic}
+   \Return $4 x$
+ \end{algorithm}
+ \FloatBarrier
+
+The first few terms using this algorithm would read $
+4( ( 1 - \frac{1}{3} ) + ( \frac{1}{5} - \frac{1}{7} ) + \dots )$.
+
+You notice that after a large number of iterations this algorithm exhibits some strange
+ behavior -- it does not seem to converge to $\pi$. You decide to investigate further
+ and notice the error term $\lvert x - \pi \rvert$ does not go to zero. What
+  might be causing this problem?
+
+\subsection*{Possible Answer 3:}
+
+As $k$ grows large we will find that $\frac{1}{2k-1} \approx \frac{1}{2( k + 1 ) -1}
+\leftrightarrow \frac{1}{2k-1} - \frac{1}{2( k + 1 ) -1} \approx 0$.
+We also expect that these terms will have similar numbers of significant digits --
+ this is a situation that will almost certainly result in loss of significance /
+ catastrophic cancellation. The result of this ( might ) be the error term
+ converging to some non-zero constant, or diverging.
+
+\subsection*{Question 4:}
+
+Suppose your team decides that the number of iterations/recursions necessary
+to guarantee required precision can be determined
+ at compile time. Further it has been determined that
+ double-precision floating-point numbers are the only type that needs to be
+ supported.
+
+ How would you re-write your algorithm to be
+ computed at compile time instead of run time?
+
+\subsection*{Possible Answer 4:}
+
+Possible answer if starting with the Gregory Sum is stated below -- answer for
+other series methods are similar.
+
+\begin{minted}[mathescape,
+               linenos,
+               numbersep=5pt,
+               gobble=2,
+               frame=lines,
+               framesep=2mm]{cpp}
+
+    \* meta_pi.h *\
+    namespace wbp {
+
+    // General case
+    template<unsigned int N, typename T = double>
+    struct GregorySum {
+        static constexpr T sum =
+         ( (N % 2) ? 1.0 : -1.0 ) / ( 2*N - 1 ) +  GregorySum<N - 1, T>::sum;
+    };
+
+    // Specialized stop case
+    template<typename T>
+    struct GregorySum<1, T> {
+        static constexpr T sum = 1;
+    };
+
+    template< unsigned int N >
+    double compute_meta_pi() {
+        return 4.0*GregorySum< N >::sum;
+    }
+
+    }
+\end{minted}
+
+Usage: \verb|wbp::compute_meta_pi<101>()|
+
+\end{document}
