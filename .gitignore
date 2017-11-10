@@ -1,0 +1,5 @@
+# Extra files from LaTeX
+*.aux
+*.log
+/Questions/With_Answers/_minted*
+/Questions/Without_Answers/_minted*
