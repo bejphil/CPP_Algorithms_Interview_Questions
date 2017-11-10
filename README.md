@@ -21,3 +21,11 @@ I expected candidates to be able to answer Question 1 mostly correctly. I also w
 
 I've been told the questions are a bit "Too Math-y" for a typical software interview,
 which seems like a fair evaluation. In retrospect the questions dive a bit too deep into the specifics of C++ and do not cover enough basic CS knowledge.
+
+## What's in this Repository
+
+The repository is in two parts, one being the actual question write-up ( with and without suggested answers ) and the other being example code to accompany the suggested answers.
+
+To read the questions look under `Questions/With_Answers` or `Questions/Without_Answers` depending on your needs. The questions are provided in `.tex` and `.pdf` forms. In order to build these from raw `.tex` files yourself you'll need to have the `minted` packaged instead along with `xetex`. Build using `xetex --shellescape *.tex`
+
+The sample code can be found under `Code` as a bunch of header files.
